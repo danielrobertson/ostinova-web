@@ -1,29 +1,31 @@
 # Ostinova
 
-A habits and goals journal built with TanStack Start, React, shadcn/ui, Tailwind CSS, and Cloudflare Workers.
+A project-session prototype built with TanStack Start, React, shadcn/ui, Tailwind CSS, and Cloudflare Workers.
 
-## Run locally
+Start a session, write what you did, and leave a next step. The next step appears in Up next; the journal keeps the session history. The UI has light, dark, and system themes, an optional quiet confirmation tone, and responsive navigation.
 
-```bash
+## Development
+
+```sh
 pnpm install
 pnpm dev
-```
-
-Open the local URL printed by Vite. To check the production Worker build locally:
-
-```bash
+pnpm test
 pnpm build
-pnpm preview
 ```
 
-## Deploy
+## Project context
 
-```bash
-pnpm deploy
-```
+- [Agent instructions](AGENTS.md)
+- [Product requirements and current scope](docs/product.md)
+- [Design preferences](docs/design.md)
+- [Cloudflare implementation plan](docs/cloudflare-plan.md)
 
-Sign in to Cloudflare with `pnpm exec wrangler login` first. The Worker configuration is in `wrangler.jsonc`.
+## Data and limitations
 
-## Data
+Example projects and starter steps are included. Sessions, breadcrumbs, and projects save to `ostinova.projects.v2` in this browser. The earlier habits/goals data at `ostinova.v1` is preserved but not displayed. There is no automatic migration or upload.
 
-Habits, check-ins, and goals currently save in the browser's local storage. The starter entries are examples and can be edited or deleted. Data stays on the same browser and is not shared between devices. No Cloudflare database or account system is configured yet.
+This is not yet connected to authentication, D1, cloud sync, or reminders. Navigation views currently use component state. The focus clock measures elapsed wall time; it is not a Pomodoro timer and has no pause/cancel controls yet. Sounds start muted. Pricing and native app work are not implemented.
+
+## Deployment
+
+The existing `wrangler.jsonc` targets Cloudflare Workers. When deployment is intended, `pnpm deploy` builds and deploys using the configured Cloudflare account. See the integration plan before provisioning backend resources.
