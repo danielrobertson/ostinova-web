@@ -22,16 +22,18 @@ Proposed schema:
 | --- | --- |
 | users | id, apple_sub unique, timezone, created_at |
 | auth_sessions | id, user_id, refresh_hash unique, family_id, expires_at, revoked_at |
-| projects | id, user_id, name, color, archived_at, version |
-| sessions | id, user_id, project_id, started_at, finished_at, version; at most one unfinished session per user |
+| goals | id, user_id, name, color, archived_at, version |
+| habits | id, user_id, goal_id nullable, name, schedule_kind, weekdays, weekly_target, version |
+| check_ins | id, user_id, habit_id, local_date, completed_at; unique user/habit/local_date |
+| sessions | id, user_id, goal_id, started_at, finished_at, version; at most one unfinished session per user |
 | journal_entries | id, user_id, session_id unique, summary, open_loops |
-| breadcrumbs | id, user_id, project_id, session_id unique, text, completed_at, position, version |
-| reminder_rules | id, user_id, project_id, timezone, schedule, next_due_at, enabled |
+| breadcrumbs | id, user_id, goal_id, session_id unique, text, completed_at, position, version |
+| reminder_rules | id, user_id, goal_id, timezone, schedule, next_due_at, enabled |
 | push_subscriptions | id, user_id, platform, endpoint/token, revoked_at |
 | reminder_outbox | id, user_id, rule_id, occurrence_at, status; unique rule/occurrence |
 | mutation_receipts | user_id, idempotency_key, request_hash, response, expires_at; unique user/key |
 
-Breadcrumbs are the v1 todos. Avoid a duplicate `todos` table unless manual todos become an approved feature. V2 adds habits, schedules, check_ins, and per-day journal relations. Store UTC timestamps and IANA timezones. Calendar dates and weekly boundaries are user-local concepts, not UTC truncations.
+Breadcrumbs are the v1 todos. Avoid a duplicate `todos` table unless manual todos become an approved feature. The current user direction brings repeating habits into v1. Add habits and check_ins now; per-day journals and freeze rules remain later work. Store UTC timestamps and IANA timezones. Calendar dates and weekly boundaries are user-local concepts, not UTC truncations.
 
 Acceptance: anonymous requests rejected; user A cannot read, reorder, or mutate user B's data; invalid/expired/replayed Apple and refresh tokens rejected; secrets absent from client bundle; migrations tested locally.
 
@@ -39,9 +41,12 @@ Acceptance: anonymous requests rejected; user A cannot read, reorder, or mutate 
 
 | Method/path | Behavior |
 | --- | --- |
-| GET/POST `/api/projects` | List/create owned projects |
-| PATCH `/api/projects/:id` | Rename/archive, expected version |
-| GET `/api/sessions?projectId=&cursor=` | Paginated journal/session history |
+| GET/POST `/api/habits` | List/create habits scoped by goal and owner |
+| PATCH `/api/habits/:id` | Edit name, recurrence, or goal assignment; preserve check-ins and validate ownership when a goal is assigned |
+| PUT/DELETE `/api/habits/:id/check-ins/:date` | Idempotently complete/undo one local-date check-in |
+| GET/POST `/api/goals` | List/create owned goals |
+| PATCH `/api/goals/:id` | Rename/archive/restore, expected version; archive detaches habits and preserves history |
+| GET `/api/sessions?goalId=&cursor=` | Paginated journal/session history |
 | POST `/api/sessions` | Start, idempotency key, one active session per user |
 | GET `/api/sessions/active` | Recover active session across reload/devices |
 | POST `/api/sessions/:id/finish` | Atomically finish session, save journal, complete source breadcrumb, create next breadcrumb |
@@ -49,7 +54,7 @@ Acceptance: anonymous requests rejected; user A cannot read, reorder, or mutate 
 | PATCH `/api/breadcrumbs/:id` | Complete/reopen with expected version |
 | PUT `/api/breadcrumbs/order` | Validate same-user IDs, reorder atomically, detect stale list version |
 | GET `/api/activity?from=&to=&timezone=` | Session counts, cumulative totals, timezone-aware buckets |
-| POST `/api/import` | Explicit, validated, idempotent local project import |
+| POST `/api/import` | Explicit, validated, idempotent local goal import |
 | GET/PUT `/api/preferences` | Theme, sound, timezone, reminder settings |
 | POST `/api/auth/refresh`, `/api/auth/logout` | Rotate/revoke tokens |
 
@@ -59,7 +64,7 @@ Acceptance: two concurrent starts leave one active session; retried finish creat
 
 ## Phase 3: connect the web client
 
-Replace local operations with a repository/API adapter and optimistic updates that roll back on failure. Keep a visible saving/error status. Add actual TanStack URL routes for Today, Journal, Completed, and project detail. Keep the prototype data import explicit, preview its contents, and never upload sample data automatically. Do not silently convert `ostinova.v1` binary habits/goals to project sessions.
+Replace local operations with a repository/API adapter and optimistic updates that roll back on failure. Keep a visible saving/error status. Add actual TanStack URL routes for Habits, Goals, and goal detail. Journal and completed steps are nested sections in goal detail. Keep the prototype data import explicit, preview its contents, and never upload sample data automatically. Preserve the original `ostinova.v1` data. The local v2 project-to-goal migration preserves IDs and history; cloud import remains explicit.
 
 For the initial online release, REST plus refetch is sufficient. If offline editing is added, use IndexedDB mutations with stable operation IDs, version checks, retries, and account-specific caches. Clear private cached data on logout. An offline queue is a separate feature, not implied by localStorage.
 
@@ -83,3 +88,7 @@ Define target latency and operational ownership before launch. Test DST transiti
 ## Release gates
 
 Use generated binding types and pinned Wrangler schema when adding bindings. Apply migrations to staging before production. Run authorization isolation, auth rotation, concurrent session, idempotency, and timezone tests in the Workers runtime. Validate backup/restore and account export/deletion procedures. Keep logs structured and free of user journal contents. Deploy only after environment values, Apple configuration, and reminder policy are concrete and reviewed. No production deployment is part of this UI/documentation pass.
+
+## Current recurrence contract
+
+Habits may belong to one goal or stand alone, represented by a null goal ID. Daily habits are due every day; selected-day habits are due on those local weekdays. Weekly habits require N distinct checked days in a Monday–Sunday week, with N between 1 and 7. Today includes due habits and habits checked today so undo remains available. Goal detail includes all assigned habits. Editing or reassignment preserves historical check-ins. The server must apply this same contract using the account timezone, test DST/week/year boundaries, and reject cross-user goal assignments. Freeze rules and reminders are separate from this recurrence implementation.

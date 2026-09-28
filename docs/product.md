@@ -1,62 +1,47 @@
 # Ostinova product requirements
 
-Source: [Simple Habit Tracker + Dead-Simple Todos](https://app.notion.com/p/danielrobertson/Simple-Habit-Tracker-Dead-Simple-Todos-3e037740271381938555f5dfcbabd0d8?source=copy_link). Read in the signed-in browser on September 27, 2026. Market claims in that document are background research, not independently verified facts here.
+## Current direction
 
-## Which direction governs
+The latest design request allows standalone habits and groups the habit list into expandable goal sections, including a "Without a goal" section. This supersedes the earlier required goal assignment.
 
-The brief contains an original habit-grid concept, a September 26 project-habits pivot, and September 27 architecture decisions. The explicit pivot names project habits as v1 and defers binary habits to v2. The architecture says web first, iOS later; this supersedes the older simultaneous iOS/Android MVP language. Those are the working interpretations, not a claim that the document is internally consistent.
+The user's follow-up explicitly changes the model to Goals with repeating Habits assigned to them. This supersedes the earlier interpretation of the [Notion brief](https://app.notion.com/p/danielrobertson/Simple-Habit-Tracker-Dead-Simple-Todos-3e037740271381938555f5dfcbabd0d8?source=copy_link) that deferred binary habits to v2. The brief remains background for simple interaction, forgiving progress, journals, sound, and Cloudflare architecture.
 
-## Who and what
+## Core loop
 
-For someone returning to a long-running creative project, the problem is remembering where to restart. The home view should answer "what was I going to do next?" and let the person start in one action.
+1. Create a goal describing what you want to achieve.
+2. Create a habit, optionally assigning it to a goal.
+3. Choose every day, selected weekdays, or a target number of days per week.
+4. Check off today's occurrence. The habit repeats on its next scheduled day.
 
-1. Start a project session. A focus timer is optional.
-2. Finish with one line about the work and an optional dump of unfinished thoughts.
-3. Save a single next step. Keep this close-out comfortably under 30 seconds.
-4. Put that breadcrumb in Up next, ready for the next session. The journal keeps the summary, open loops, and next step together.
+A habit may belong to one goal or stand alone without a goal. A goal can have many habits. Habit editing supports changing the name, schedule, and assigned goal without losing check-in history.
 
-The brief defines the project streak as consecutive sessions with breadcrumbs, not consecutive calendar days. Do not reintroduce daily streak pressure through the activity grid.
+## Implemented local behavior
 
-## V1 requirements and acceptance
+- Two sidebar destinations: Habits and Goals. Habits shows Today or All habits, grouped by goal. Goals shows plain rows with assigned habit counts, cumulative check-ins for those habits, and finished session totals.
+- Goal creation, goal detail, and recoverable removal. Removing a goal detaches habits and preserves check-ins, sessions, and breadcrumbs. Removed goals can be viewed and restored; restoration leaves habits standalone until explicitly reassigned. Removal is disabled during an active session for that goal.
+- Session controls, ordered next steps, completed steps, and the journal are available inside expandable goal-detail sections. The active session appears in a compact footer.
+- Repeating habit creation and editing, with optional goal assignment.
+- Daily, selected-weekday, and 1–7 distinct days per week schedules. Weeks start Monday; each habit allows one check-in per local date. These are explicit implementation defaults, not a multiple-count-per-day tracker.
+- Habits use compact rows under expandable goal headers with counts. Standalone habits appear under "Without a goal". Expansion state lasts for the current view.
+- Today shows due habits and habits already checked today so completion can be undone. Goal detail shows all assigned habits, including those not due.
+- Weekly targets stop appearing as due after reaching the target; checked-today habits remain visible for undo. Historical totals are not reset.
+- Existing goal sessions, short journal close-outs, breadcrumbs, and ordered Up next remain available alongside repeating habits.
+- Light/dark/system themes, responsive layout, opt-in confirmation sound, local persistence.
 
-| Requirement | Acceptance | Current status |
-| --- | --- | --- |
-| Projects | Create a named project and start work on it | Local prototype |
-| Sessions | One active session, survives refresh; elapsed time derives from start timestamp | Local prototype |
-| Close-out | Summary and one next step required; open loops optional; one save records session and breadcrumb | Local prototype, one local state update |
-| Up next | Breadcrumb-derived list, complete/reopen, drag to reorder; keyboard/touch alternatives | Local prototype |
-| Journal | Browse session summaries, open loops, and breadcrumbs by project or across projects | Local prototype |
-| Activity | Show actual session activity and cumulative totals without inventing history | 14-day local grid and all-time totals |
-| Appearance | Dark/light/system, persistent choice, mobile layout, clear focus | Implemented |
-| Quiet sounds | One mute setting, short confirmation, rare milestone cues, native silent-mode respect | Opt-in web confirmation tone only; native behavior and milestone cues deferred |
-| Account/sync | Apple sign-in, Worker API, D1, same data across devices | Planned |
-| Reminders | Explicit consent, timezone-aware schedules, measured delivery reliability | Planned; channel and timing policy undecided |
-| Native | iOS client using shared HTTPS API and Keychain | Later; Android timing unresolved |
+## Data compatibility
 
-## Deferred original concept
+Current storage is `ostinova.goals.v3`. If absent, the app reads `ostinova.projects.v2`, maps projects to goals and project references to goal references, and preserves sessions, breadcrumbs, and active sessions. The old key remains as a backup. Migrated goals start with no habits rather than guessed schedules. The older `ostinova.v1` habits/goals demo remains untouched and needs a separate explicit import flow.
 
-V2 includes daily/specific-day/weekly-count binary habits, per-day journals, completion percentages, best-ever totals, intentional skips, and streak freezes. Native haptics, widgets, and Apple Health integration need separate native planning. Optional focus timer controls, milestones, advanced history, and attachments are not in this UI pass.
+The original prototype gave new goals a purple default color. On load, only goals with that exact default color change to shadcn blue; other saved goal colors and all history remain intact. New goals also default to blue.
 
-Goals in the starter app were design-system demos, not confirmed requirements. The old habits/goals storage remains under its original key; a future explicit import/export flow can recover or migrate it. The new model must not guess that a numeric goal is a project or that a habit check-in is a work session.
+## Still planned
 
-## Non-goals and constraints
+Worker API, D1, Sign in with Apple, cross-device sync, reminders, real URL routes, account export/deletion, and native iOS. Advanced habit history, intentional skips, freeze arithmetic, goal editing/permanent deletion, and habit archive/delete are not implemented. Session pause/cancel and optional focus countdown remain open.
 
-No subtasks, tags, Kanban, calendars, Eisenhower matrices, leaderboards, currencies, inventories, punitive streak resets, or a second task-management system. Social features, if ever added, are opt-in and cooperative. Keep the game layer ignorable. Do not put core habit features behind arbitrary free-tier caps.
+## Product constraints
 
-Sound is part of the brief. Web Audio cannot guarantee respect for every device's hardware silent switch; default off here and keep the mute control visible. Native clients must respect platform audio policies.
+Keep the goal-to-habit relationship clear. Do not add tags, subtasks, boards, priority matrices, currencies, leaderboards, or punitive missed-day states. Preserve session journals and the single ordered breadcrumb list. No cloud sync or delivery promises while data is local. Pricing remains undecided.
 
-## Open decisions
+## Acceptance checks
 
-- Confirm the pivot and web-first interpretation before scheduling binary-habit work.
-- Decide whether older unfinished breadcrumbs accumulate or are replaced. The prototype retains them and completes the breadcrumb used to start a finished session. This is an implementation assumption.
-- Decide pause/cancel and abandoned-session handling; current prototype supports finishing, not pause/cancel.
-- Define reminders for project sessions, quiet hours, fallback channels, and what counts as successful delivery. Do not promise exact OS delivery times.
-- Define project edit/archive/delete, export/import, and account deletion before production.
-- Set freeze/skip/partial-credit arithmetic before v2 statistics.
-- Resolve pricing: the brief considers subscription plus lifetime and one-time purchase. No price or billing model is approved.
-- Review native Android scope. The newer architecture explicitly describes iOS only.
-- Decide whether advanced history is paid: the brief both suggests this and says paid features should be cosmetic only.
-
-## Next build order
-
-Auth and owned D1 schema → session and breadcrumb API → client persistence adapter and explicit local import → reminder infrastructure and delivery testing → real URL routes and production recovery flows → iOS → binary habits. Keep each change independently testable.
+Create a goal, add daily and selected-day habits, verify they appear under the correct goal, change a habit's assignment, and confirm history is preserved. Check/undo today and reload. Verify weekly progress across Monday and year boundaries. Migrate a v2 workspace with an active session and journal history. Confirm both themes and narrow layouts still work.
