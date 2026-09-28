@@ -17,13 +17,14 @@ A habit may belong to one goal or stand alone without a goal. A goal can have ma
 
 ## Implemented local behavior
 
-- Two sidebar destinations: Habits and Goals. Habits shows Today or All habits, grouped by goal. Goals shows plain rows with assigned habit counts, cumulative check-ins for those habits, and finished session totals.
+- Two sidebar destinations: Habits and Goals. Habits shows a selected local day, grouped by goal. Sidebar counters show total habits and active goals. A calendar picker supports today and earlier dates, with retrospective check-in and undo. Goals shows plain rows with assigned habit counts, cumulative check-ins for those habits, and finished session totals.
 - Goal creation, goal detail, and recoverable removal. Removing a goal detaches habits and preserves check-ins, sessions, and breadcrumbs. Removed goals can be viewed and restored; restoration leaves habits standalone until explicitly reassigned. Removal is disabled during an active session for that goal.
 - Session controls, ordered next steps, completed steps, and the journal are available inside expandable goal-detail sections. The active session appears in a compact footer.
-- Repeating habit creation and editing, with optional goal assignment.
+- Repeating habit creation and editing, with optional goal assignment. The Habits page uses an inline entry bar: type a name and press Enter, optionally pick an existing goal or name a new goal. New goals and their first habit are saved together. New habits default to every day; schedules can be changed in the habit editor. Goal assignment appears as an icon only while the bar is focused or its picker is open. The bar retains the chosen goal for the next habit; adding returns to Today and expands its group.
 - Daily, selected-weekday, and 1–7 distinct days per week schedules. Weeks start Monday; each habit allows one check-in per local date. These are explicit implementation defaults, not a multiple-count-per-day tracker.
 - Habits use compact rows under expandable goal headers with counts. Standalone habits appear under "Without a goal". Expansion state lasts for the current view.
-- Today shows due habits and habits already checked today so completion can be undone. Goal detail shows all assigned habits, including those not due.
+- The selected date shows due habits and habits checked on that date so completion can be undone. Goal detail shows all assigned habits, including those not due.
+- Habits can be archived from their row action and restored from the Habits page's Archived habits section. Archiving preserves check-in history and excludes the habit from active counts and lists.
 - Weekly targets stop appearing as due after reaching the target; checked-today habits remain visible for undo. Historical totals are not reset.
 - Existing goal sessions, short journal close-outs, breadcrumbs, and ordered Up next remain available alongside repeating habits.
 - Light/dark/system themes, responsive layout, opt-in confirmation sound, local persistence.
@@ -45,3 +46,5 @@ Keep the goal-to-habit relationship clear. Do not add tags, subtasks, boards, pr
 ## Acceptance checks
 
 Create a goal, add daily and selected-day habits, verify they appear under the correct goal, change a habit's assignment, and confirm history is preserved. Check/undo today and reload. Verify weekly progress across Monday and year boundaries. Migrate a v2 workspace with an active session and journal history. Confirm both themes and narrow layouts still work.
+
+Historical views apply current habit schedules and assignments, since schedule and assignment versions are not stored. Weekly due status ignores check-ins after the selected date; backfilling may raise a completed week above its target without deleting later completions. Future dates cannot be selected. Goals have cumulative progress, not a separate daily completion checkbox. Sidebar collapse preference persists locally; desktop hover or navigation keyboard focus peeks the sidebar over content. Mobile retains the navigation drawer.

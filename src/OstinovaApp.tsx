@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowDown, ArrowUp, ArrowUpRight, BookOpen, Check, ChevronRight, GripVertical, ListTodo, Target, Menu, Monitor, Moon, Play, Plus, Square, Sun, Volume2, VolumeX, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, ArrowUpRight, BookOpen, Check, ChevronRight, GripVertical, PanelLeft, Play, Plus, Square, Volume2, VolumeX, X } from 'lucide-react'
 import { HabitSection } from './components/HabitSection'
 import { Button } from './components/ui/button'
+import { AppSidebar } from './components/AppSidebar'
+import { AnimatedSidebarProvider, AnimatedSidebarTrigger } from './components/ui/animated-sidebar'
+import { GoalActions } from './components/ui/goal-actions'
+import type { Theme } from './components/ui/user-menu'
 import { defaultGoalColor, finishSession, removeGoal, initialWorkspace, migrateWorkspace, normalizeDefaultGoalColor, reorder, storageKey } from './lib/workspace'
 import type { Workspace } from './lib/workspace'
 
-type Theme = 'system' | 'light' | 'dark'
 const themeKey = 'ostinova.theme'
 const formatDate = (value: string) => new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 
@@ -17,6 +20,7 @@ export function OstinovaApp() {
   const [theme, setTheme] = useState<Theme>('system')
   const [muted, setMuted] = useState(true)
   const [menu, setMenu] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [newGoal, setNewGoal] = useState(false)
   const [goalName, setGoalName] = useState('')
   const [closing, setClosing] = useState(false)
@@ -42,6 +46,7 @@ export function OstinovaApp() {
       const preference = localStorage.getItem(themeKey)
       if (preference === 'dark' || preference === 'light' || preference === 'system') setTheme(preference)
       setMuted(localStorage.getItem('ostinova.muted') !== 'false')
+      setSidebarCollapsed(localStorage.getItem('ostinova.sidebar.collapsed') === 'true')
       setReady(true)
     } catch { setStorageError('Saved data could not be read. Reload or export your browser data before making changes.') }
   }, [])
@@ -69,6 +74,11 @@ export function OstinovaApp() {
   }, [newGoal, closing])
   useEffect(() => { if (!notice) return; const t = setTimeout(() => setNotice(''), 4000); return () => clearTimeout(t) }, [notice])
   useEffect(() => { setNow(Date.now()); const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t) }, [])
+
+  function setSidebarOpen(open: boolean) {
+    setSidebarCollapsed(!open)
+    try { localStorage.setItem('ostinova.sidebar.collapsed', String(!open)) } catch { /* preference remains in memory */ }
+  }
 
   function tick() {
     if (muted) return
@@ -100,37 +110,28 @@ export function OstinovaApp() {
     setClosing(false); setSummary(''); setOpenLoops(''); setNextStep(''); setNotice('Session saved. Your next step is ready.'); tick()
   }
 
-  return <div className="app-shell">
-    <aside inert={newGoal || closing} className={`sidebar ${menu ? 'is-open' : ''}`}>
-      <a className="brand" href="#" onClick={e => { e.preventDefault(); navigate('habits') }}><span className="brand-icon"><Check size={18} /></span>ostinova</a>
-      <nav aria-label="Main navigation" className="mt-9">
-        <Button variant="ghost" className={`nav-item ${view === 'habits' ? 'selected' : ''}`} onClick={() => navigate('habits')} aria-current={view === 'habits' ? 'page' : undefined}><ListTodo size={18} />Habits</Button>
-        <Button variant="ghost" className={`nav-item ${view !== 'habits' ? 'selected' : ''}`} onClick={() => navigate('goals')} aria-current={view !== 'habits' ? 'page' : undefined}><Target size={18} />Goals</Button>
-      </nav>
-      <div className="sidebar-bottom">
-        <div className="appearance"><span>Appearance</span><div role="group" aria-label="Appearance">{([{ id: 'light', Icon: Sun }, { id: 'dark', Icon: Moon }, { id: 'system', Icon: Monitor }] as const).map(({ id, Icon }) => <button key={id} className="icon-button" aria-label={`${id[0].toUpperCase() + id.slice(1)} theme`} aria-pressed={theme === id} onClick={() => setTheme(id)}><Icon size={15} /></button>)}</div></div>
-      </div>
-    </aside>
-    {menu && <button className="nav-scrim" aria-label="Close navigation" onClick={() => setMenu(false)} />}
-    <main className="main" inert={newGoal || closing}>
-      <div className="mobile-nav-trigger"><button className="icon-button mobile-menu" aria-label="Open navigation" onClick={() => setMenu(true)}><Menu size={20} /></button></div>
+  return <AnimatedSidebarProvider open={!sidebarCollapsed} onOpenChange={setSidebarOpen} openMobile={menu} onOpenMobileChange={setMenu}>
+    <AppSidebar view={view} habitCount={ready ? workspace.habits.filter(h => !h.archivedAt).length : 0} goalCount={ready ? workspace.goals.filter(g => !g.archivedAt).length : 0} theme={theme} onThemeChange={setTheme} navigate={navigate} inert={newGoal || closing} />
+    <main className="main" inert={newGoal || closing || menu}>
+      <header className="workspace-toolbar"><AnimatedSidebarTrigger className="text-muted-foreground hover:bg-muted" aria-label="Toggle sidebar"><PanelLeft size={17} /></AnimatedSidebarTrigger><span className="workspace-header-divider" aria-hidden="true" /><h1 className="workspace-page-title">{selected?.name ?? (view === 'goals' ? 'Goals' : 'Habits')}</h1><div id="workspace-header-actions" className="workspace-header-actions" /></header>
       {storageError && <p className="storage-error" role="alert">{storageError}</p>}
-      <div className="flex min-h-dvh flex-col">
+      <div className="flex min-h-[calc(100dvh-56px)] flex-col">
         <div className="primary-pane">
           {selected && <div className="mb-7 flex min-w-0 items-center gap-2 text-sm"><Button variant="ghost" size="sm" onClick={() => navigate('goals')}>← Goals</Button><ChevronRight size={14} className="shrink-0 text-muted-foreground" /><span className="min-w-0 break-words font-medium">{selected.name}</span></div>}
           {view === 'goals' && <div className="mb-6 flex justify-end"><Button variant="outline" disabled={!ready} onClick={() => setNewGoal(true)}><Plus size={15} />New goal</Button></div>}
           {view === 'goals' && <section aria-label="Goals">
             {workspace.goals.filter(g => !g.archivedAt).map(g => {
-              const habits = workspace.habits.filter(h => h.goalId === g.id)
+              const habits = workspace.habits.filter(h => h.goalId === g.id && !h.archivedAt)
               const checkIns = habits.reduce((sum, h) => sum + h.checkIns.length, 0)
               const total = workspace.sessions.filter(s => s.goalId === g.id).length
-              return <div className="flex items-center gap-3 border-b border-border py-4" key={g.id}>
-                <button className="flex min-w-0 flex-1 items-center gap-3 text-left" onClick={() => navigate(g.id)}>
-                  <span className="goal-dot" style={{ background: g.color }} />
-                  <span className="min-w-0 flex-1"><span className="block break-words">{g.name}</span><span className="mt-1 block text-xs text-muted-foreground">{habits.length} {habits.length === 1 ? 'habit' : 'habits'} · {checkIns} {checkIns === 1 ? 'check-in' : 'check-ins'} · {total} {total === 1 ? 'session' : 'sessions'}</span></span><ChevronRight size={16} className="text-muted-foreground" />
+              return <div className="goal-row" key={g.id}>
+                <button className="goal-row-main" onClick={() => navigate(g.id)}>
+                  <span className="goal-row-name">{g.name}</span>
+                  <span className="goal-row-meta"><span>{habits.length} {habits.length === 1 ? 'habit' : 'habits'}</span><span>{checkIns} {checkIns === 1 ? 'check-in' : 'check-ins'}</span><span>{total} {total === 1 ? 'session' : 'sessions'}</span></span>
                 </button>
-                <Button variant="ghost" size="sm" disabled={!ready || workspace.active?.goalId === g.id} aria-label={`Remove ${g.name}`} onClick={() => { setWorkspace(w => removeGoal(w, g.id, new Date().toISOString())); setNotice('Goal removed. Its habits are now standalone. History is kept in Removed goals.') }}>Remove</Button>
+                <GoalActions name={g.name} canRemove={ready && workspace.active?.goalId !== g.id} onOpen={() => navigate(g.id)} onRemove={() => { setWorkspace(w => removeGoal(w, g.id, new Date().toISOString())); setNotice('Goal removed. Its habits are now standalone. History is kept in Removed goals.') }} />
               </div>
+
             })}
             {!workspace.goals.some(g => !g.archivedAt) && <p className="habit-empty">Create a goal to give your habits a direction.</p>}
             {workspace.goals.some(g => g.archivedAt) && <details className="mt-8 text-muted-foreground"><summary className="cursor-pointer text-xs">Removed goals</summary>{workspace.goals.filter(g => g.archivedAt).map(g => <div key={g.id} className="flex items-center gap-3 border-b border-border py-3"><button className="min-w-0 flex-1 break-words text-left" onClick={() => navigate(g.id)}>{g.name}</button><Button variant="ghost" size="sm" disabled={!ready} onClick={() => setWorkspace(w => ({ ...w, goals: w.goals.map(item => item.id === g.id ? { ...item, archivedAt: undefined } : item) }))}>Restore</Button></div>)}</details>}
@@ -161,7 +162,7 @@ export function OstinovaApp() {
     {newGoal && <div className="dialog-backdrop" onClick={() => setNewGoal(false)}><section className="dialog" role="dialog" aria-modal="true" aria-labelledby="goal-title" onClick={e => e.stopPropagation()} onKeyDown={trapFocus}><div className="dialog-heading"><h2 id="goal-title">New goal</h2><button className="icon-button" aria-label="Close new goal" onClick={() => setNewGoal(false)}><X size={18} /></button></div><p>What do you want to achieve?</p><form onSubmit={e => { e.preventDefault(); if (!goalName.trim()) return; const id = crypto.randomUUID(); setWorkspace(w => ({ ...w, goals: [...w.goals, { id, name: goalName.trim(), color: defaultGoalColor }] })); setGoalName(''); setNewGoal(false); navigate(id) }}><label>Goal name<input ref={goalInput} value={goalName} onChange={e => setGoalName(e.target.value)} placeholder="e.g. Write a short story" required maxLength={100} /></label><div className="dialog-actions"><Button type="button" variant="ghost" onClick={() => setNewGoal(false)}>Cancel</Button><Button type="submit" disabled={!ready || !goalName.trim()}>Create goal</Button></div></form></section></div>}
     {closing && <div className="dialog-backdrop"><section className="dialog" role="dialog" aria-modal="true" aria-labelledby="finish-title" onKeyDown={trapFocus}><div className="dialog-heading"><h2 id="finish-title">Leave a breadcrumb</h2><button className="icon-button" aria-label="Back to session" onClick={() => setClosing(false)}><X size={18} /></button></div><p>{activeGoal?.name} · A few words are enough.</p><form onSubmit={e => { e.preventDefault(); finish() }}><label>What did you do?<textarea ref={summaryInput} value={summary} onChange={e => setSummary(e.target.value)} placeholder="One line about this session" maxLength={500} required rows={2} /></label><label>Anything still on your mind? <span>Optional</span><textarea value={openLoops} onChange={e => setOpenLoops(e.target.value)} placeholder="Put it here for later" maxLength={2000} rows={2} /></label><label>What's the single next step?<input value={nextStep} onChange={e => setNextStep(e.target.value)} placeholder="Make it easy to start again" maxLength={300} required /></label><div className="dialog-actions"><Button type="button" variant="ghost" onClick={() => setClosing(false)}>Keep working</Button><Button type="submit" disabled={!ready || !summary.trim() || !nextStep.trim()}>Save session<ArrowUpRight size={14} /></Button></div></form></section></div>}
     {notice && <div className="toast" role="status">{notice}</div>}
-  </div>
+  </AnimatedSidebarProvider>
 
   function trapFocus(e: React.KeyboardEvent<HTMLElement>) {
     if (e.key === 'Escape') { setNewGoal(false); setClosing(false); return }

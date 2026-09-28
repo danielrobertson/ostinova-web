@@ -113,3 +113,15 @@ test('only the old default purple goal color changes to shadcn blue', () => {
   assert.equal(w.goals[0].color, '#8b9cf7')
   assert.equal(normalizeDefaultGoalColor(normalized), normalized)
 })
+
+test('past check-ins use the selected local date and preserve later completions', () => {
+  const selected = new Date(2026, 8, 28, 12)
+  const later = '2026-09-30'
+  const w = { ...initialWorkspace, habits: [{ ...habit, schedule: 'weekly', target: 1, checkIns: [later] }] }
+  assert.equal(isDue(w.habits[0], selected), true)
+  const checked = toggleHabit(w, 'h', selected)
+  assert.deepEqual(checked.habits[0].checkIns, [later, '2026-09-28'])
+  assert.deepEqual(toggleHabit(checked, 'h', selected).habits[0].checkIns, [later])
+  assert.equal(isDue(checked.habits[0], new Date(2026, 8, 29)), false)
+  assert.deepEqual(migrateWorkspace(JSON.parse(JSON.stringify(checked))).habits[0].checkIns, [later, '2026-09-28'])
+})

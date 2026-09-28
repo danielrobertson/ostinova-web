@@ -1,4 +1,4 @@
-export type Habit = { id: string; goalId: string | null; name: string; schedule: 'daily' | 'days' | 'weekly'; weekdays: number[]; target: number; checkIns: string[] }
+export type Habit = { id: string; goalId: string | null; name: string; schedule: 'daily' | 'days' | 'weekly'; weekdays: number[]; target: number; checkIns: string[]; archivedAt?: string }
 export type Goal = { id: string; name: string; color: string; archivedAt?: string }
 export type Session = { id: string; goalId: string; startedAt: string; finishedAt: string; summary: string; openLoops: string; nextStep: string }
 export type Breadcrumb = { id: string; goalId: string; sessionId?: string; text: string; completedAt: string | null }
@@ -21,7 +21,7 @@ export function isWorkspace(value: unknown): value is Workspace {
   const date = (v: unknown) => text(v) && Number.isFinite(Date.parse(v as string))
   if (!w.goals.every(p => p && text(p.id) && text(p.name) && (p.archivedAt === undefined || date(p.archivedAt)) && /^#[0-9a-f]{6}$/i.test(p.color))) return false
   const goal = (id: string) => w.goals.some(p => p.id === id)
-  return w.habits.every(h => h && text(h.id) && (h.goalId === null || goal(h.goalId)) && text(h.name) && ['daily', 'days', 'weekly'].includes(h.schedule) && Array.isArray(h.weekdays) && h.weekdays.every(d => Number.isInteger(d) && d >= 0 && d <= 6) && (h.schedule !== 'days' || h.weekdays.length > 0) && Number.isInteger(h.target) && h.target >= 1 && h.target <= 7 && Array.isArray(h.checkIns) && h.checkIns.every(d => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d))) && w.sessions.every(s => s && text(s.id) && goal(s.goalId) && date(s.startedAt) && date(s.finishedAt) && text(s.summary) && text(s.openLoops) && text(s.nextStep)) &&
+  return w.habits.every(h => h && text(h.id) && (h.goalId === null || goal(h.goalId)) && text(h.name) && (h.archivedAt === undefined || date(h.archivedAt)) && ['daily', 'days', 'weekly'].includes(h.schedule) && Array.isArray(h.weekdays) && h.weekdays.every(d => Number.isInteger(d) && d >= 0 && d <= 6) && (h.schedule !== 'days' || h.weekdays.length > 0) && Number.isInteger(h.target) && h.target >= 1 && h.target <= 7 && Array.isArray(h.checkIns) && h.checkIns.every(d => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d))) && w.sessions.every(s => s && text(s.id) && goal(s.goalId) && date(s.startedAt) && date(s.finishedAt) && text(s.summary) && text(s.openLoops) && text(s.nextStep)) &&
     w.breadcrumbs.every(b => b && text(b.id) && goal(b.goalId) && text(b.text) && (b.completedAt === null || date(b.completedAt))) &&
     (w.active === null || !!w.active && goal(w.active.goalId) && date(w.active.startedAt))
 }
@@ -70,7 +70,7 @@ export function weeklyCount(habit: Habit, date: Date): number {
   return new Set(habit.checkIns.filter(d => d >= dateKey(monday) && d <= dateKey(sunday))).size
 }
 export function isDue(habit: Habit, date: Date): boolean {
-  return habit.schedule === 'daily' || (habit.schedule === 'days' ? habit.weekdays.includes(date.getDay()) : weeklyCount(habit, date) < habit.target)
+  return habit.schedule === 'daily' || (habit.schedule === 'days' ? habit.weekdays.includes(date.getDay()) : weeklyCount({ ...habit, checkIns: habit.checkIns.filter(day => day <= dateKey(date)) }, date) < habit.target)
 }
 export function toggleHabit(w: Workspace, id: string, date: Date): Workspace {
   const key = dateKey(date)
