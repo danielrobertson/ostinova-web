@@ -43,7 +43,7 @@ const MOBILE_QUERY = "(max-width: 767px)";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 
 const PANEL_TRANSITION = {
-  duration: 0.36,
+  duration: 0.22,
   ease: EASE_DRAWER,
 } as const;
 
@@ -58,8 +58,8 @@ const SIDEBAR_MORPH_TRANSITION = {
 } as const;
 
 const LABEL_ENTER_TRANSITION = {
-  duration: 0.2,
-  delay: 0.08,
+  duration: 0.14,
+  delay: 0.02,
   ease: EASE_OUT,
 } as const;
 
@@ -982,7 +982,6 @@ export function AnimatedSidebarMenuSubButton({
       aria-disabled={disabled || undefined}
       tabIndex={disabled ? -1 : undefined}
       onClick={select}
-      whileTap={context.reduce || disabled ? undefined : { scale: 0.98 }}
       transition={SPRING_PRESS}
       className={interactiveClassName}
     >
@@ -994,7 +993,6 @@ export function AnimatedSidebarMenuSubButton({
       disabled={disabled}
       aria-current={isActive ? "page" : undefined}
       onClick={select}
-      whileTap={context.reduce || disabled ? undefined : { scale: 0.98 }}
       transition={SPRING_PRESS}
       className={interactiveClassName}
     >
@@ -1063,7 +1061,7 @@ export function AnimatedSidebarMenuButton({
         <motion.span
           layoutId={context.layoutId}
           transition={context.reduce ? { duration: 0 } : SPRING_LAYOUT}
-          className="absolute inset-0 rounded-xl bg-muted"
+          className="absolute inset-0 rounded-md bg-sidebar-accent"
         />
       ) : null}
       {icon ? (
@@ -1119,7 +1117,7 @@ export function AnimatedSidebarMenuButton({
   );
 
   const interactiveClassName = cn(
-    "relative flex min-h-9 w-full min-w-0 items-center gap-2.5 overflow-hidden rounded-xl px-3 text-left text-sm font-medium outline-none",
+    "relative flex min-h-9 w-full min-w-0 items-center gap-2.5 overflow-hidden rounded-md px-3 text-left text-[13px] font-medium outline-none",
     "text-muted-foreground transition-colors hover:text-foreground",
     "focus-visible:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring",
     isActive && "text-foreground",
@@ -1139,7 +1137,6 @@ export function AnimatedSidebarMenuButton({
       title={panel.collapsed ? textLabel : undefined}
       tabIndex={disabled ? -1 : undefined}
       onClick={select}
-      whileTap={context.reduce || disabled ? undefined : { scale: 0.98 }}
       transition={SPRING_PRESS}
       className={interactiveClassName}
     >
@@ -1154,7 +1151,6 @@ export function AnimatedSidebarMenuButton({
       aria-label={textLabel}
       title={panel.collapsed ? textLabel : undefined}
       onClick={select}
-      whileTap={context.reduce || disabled ? undefined : { scale: 0.98 }}
       transition={SPRING_PRESS}
       className={interactiveClassName}
     >

@@ -1,4 +1,4 @@
-import { SquareCheck, ListTodo, Target, X } from 'lucide-react'
+import { SquareCheck, ListTodo, Flag, X } from 'lucide-react'
 import { AnimatedSidebar, AnimatedSidebarClose, AnimatedSidebarContent, AnimatedSidebarHeader, AnimatedSidebarMenu, AnimatedSidebarMenuButton, AnimatedSidebarMenuItem, AnimatedSidebarRail } from './ui/animated-sidebar'
 import { UserMenu } from './ui/user-menu'
 import type { Theme } from './ui/user-menu'
@@ -13,9 +13,9 @@ export function AppSidebar({ view, habitCount, goalCount, todoCount, theme, onTh
     </AnimatedSidebarHeader>
     <AnimatedSidebarContent className="px-3 pt-3">
       <nav aria-label="Main navigation"><AnimatedSidebarMenu>
-        <AnimatedSidebarMenuItem><AnimatedSidebarMenuButton icon={<ListTodo size={18} />} badge={habitCount} isActive={view === 'habits'} onSelect={() => navigate('habits')}>Habits</AnimatedSidebarMenuButton></AnimatedSidebarMenuItem>
-        <AnimatedSidebarMenuItem><AnimatedSidebarMenuButton icon={<Target size={18} />} badge={goalCount} isActive={view !== 'habits' && view !== 'todos'} onSelect={() => navigate('goals')}>Goals</AnimatedSidebarMenuButton></AnimatedSidebarMenuItem>
-        <AnimatedSidebarMenuItem><AnimatedSidebarMenuButton icon={<SquareCheck size={18} />} badge={todoCount} isActive={view === 'todos'} onSelect={() => navigate('todos')}>Todo</AnimatedSidebarMenuButton></AnimatedSidebarMenuItem>
+        <AnimatedSidebarMenuItem><AnimatedSidebarMenuButton icon={<ListTodo size={16} />} badge={habitCount} isActive={view === 'habits'} onSelect={() => navigate('habits')}>Habits</AnimatedSidebarMenuButton></AnimatedSidebarMenuItem>
+        <AnimatedSidebarMenuItem><AnimatedSidebarMenuButton icon={<Flag size={16} />} badge={goalCount} isActive={view !== 'habits' && view !== 'todos'} onSelect={() => navigate('goals')}>Goals</AnimatedSidebarMenuButton></AnimatedSidebarMenuItem>
+        <AnimatedSidebarMenuItem><AnimatedSidebarMenuButton icon={<SquareCheck size={16} />} badge={todoCount} isActive={view === 'todos'} onSelect={() => navigate('todos')}>Todo</AnimatedSidebarMenuButton></AnimatedSidebarMenuItem>
       </AnimatedSidebarMenu></nav>
     </AnimatedSidebarContent>
     <AnimatedSidebarRail className="after:hidden" />

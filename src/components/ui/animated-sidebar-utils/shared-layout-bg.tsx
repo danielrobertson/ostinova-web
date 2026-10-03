@@ -14,7 +14,7 @@ export const SharedLayoutBg = forwardRef<HTMLElement, HTMLAttributes<HTMLUListEl
     const item = (event.target as HTMLElement).closest('li')
     if (item && item.parentElement === event.currentTarget) setPosition({ top: item.offsetTop, height: item.offsetHeight })
   }} onPointerLeave={() => setPosition(null)}>
-    <li aria-hidden="true" className="pointer-events-none absolute inset-x-0 -z-10 list-none"><motion.span className="absolute inset-x-0 rounded-xl bg-muted/70" initial={false} animate={{ y: position?.top ?? 0, height: position?.height ?? 36, opacity: position ? 1 : 0 }} transition={reduce ? { duration: 0 } : SPRING_LAYOUT} /></li>
+    <li aria-hidden="true" className="pointer-events-none absolute inset-x-0 -z-10 list-none"><motion.span className="absolute inset-x-0 rounded-md bg-sidebar-accent/60" initial={false} style={{ height: position?.height ?? 36 }} animate={{ y: position?.top ?? 0, opacity: position ? 1 : 0 }} transition={reduce ? { duration: 0 } : SPRING_LAYOUT} /></li>
     {children}
   </ul>
 })
