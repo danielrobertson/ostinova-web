@@ -23,8 +23,8 @@ Proposed schema:
 | users | id, apple_sub unique, timezone, created_at |
 | auth_sessions | id, user_id, refresh_hash unique, family_id, expires_at, revoked_at |
 | goals | id, user_id, name, color, archived_at, version |
-| habits | id, user_id, goal_id nullable, name, schedule_kind, weekdays, weekly_target, version |
-| check_ins | id, user_id, habit_id, local_date, completed_at; unique user/habit/local_date |
+| habits | id, user_id, goal_id nullable, name, schedule_kind, weekdays, target, version |
+| check_ins | id, user_id, habit_id, local_date, completed_at; unique user/idempotency_key; date uniqueness only for binary schedules |
 | sessions | id, user_id, goal_id, started_at, finished_at, version; at most one unfinished session per user |
 | journal_entries | id, user_id, session_id unique, summary, open_loops |
 | breadcrumbs | id, user_id, goal_id, session_id unique, text, completed_at, position, version |
@@ -33,7 +33,7 @@ Proposed schema:
 | reminder_outbox | id, user_id, rule_id, occurrence_at, status; unique rule/occurrence |
 | mutation_receipts | user_id, idempotency_key, request_hash, response, expires_at; unique user/key |
 
-Breadcrumbs are the v1 todos. Avoid a duplicate `todos` table unless manual todos become an approved feature. The current user direction brings repeating habits into v1. Add habits and check_ins now; per-day journals and freeze rules remain later work. Store UTC timestamps and IANA timezones. Calendar dates and weekly boundaries are user-local concepts, not UTC truncations.
+Standalone manual todos are now approved and implemented locally, separate from session breadcrumbs. A future `todos` table should store id, user_id, text, created_at, completed_at, and version. Proposed GET/POST `/api/todos` and PATCH `/api/todos/:id` must scope all reads and writes to verified identity. This table and API are not implemented. The current user direction brings repeating habits into v1. Add habits and check_ins now; per-day journals and freeze rules remain later work. Store UTC timestamps and IANA timezones. Calendar dates and weekly boundaries are user-local concepts, not UTC truncations.
 
 Acceptance: anonymous requests rejected; user A cannot read, reorder, or mutate user B's data; invalid/expired/replayed Apple and refresh tokens rejected; secrets absent from client bundle; migrations tested locally.
 
@@ -43,7 +43,8 @@ Acceptance: anonymous requests rejected; user A cannot read, reorder, or mutate 
 | --- | --- |
 | GET/POST `/api/habits` | List/create habits scoped by goal and owner |
 | PATCH `/api/habits/:id` | Edit name, recurrence, or goal assignment; preserve check-ins and validate ownership when a goal is assigned |
-| PUT/DELETE `/api/habits/:id/check-ins/:date` | Idempotently complete/undo one local-date check-in |
+| PUT/DELETE `/api/habits/:id/check-ins/:date` | Idempotently complete/undo one local-date check-in for binary schedules |
+| POST/DELETE `/api/habits/:id/completions[/:completionId]` | Proposed count API: create with an idempotency key or undo one owned completion; atomically enforce the daily, weekly, or total target |
 | GET/POST `/api/goals` | List/create owned goals |
 | PATCH `/api/goals/:id` | Rename/archive/restore, expected version; archive detaches habits and preserves history |
 | GET `/api/sessions?goalId=&cursor=` | Paginated journal/session history |
@@ -92,3 +93,5 @@ Use generated binding types and pinned Wrangler schema when adding bindings. App
 ## Current recurrence contract
 
 Habits may belong to one goal or stand alone, represented by a null goal ID. Daily habits are due every day; selected-day habits are due on those local weekdays. Weekly habits require N distinct checked days in a Monday–Sunday week, with N between 1 and 7. Today includes due habits and habits checked today so undo remains available. Goal detail includes all assigned habits. Editing or reassignment preserves historical check-ins. The server must apply this same contract using the account timezone, test DST/week/year boundaries, and reject cross-user goal assignments. Freeze rules and reminders are separate from this recurrence implementation.
+
+Local count schedules now support multiple completions per date. The future API must use individual completion IDs and idempotency keys, with atomic target checks. The local repeated-date representation is not a proposed database primary key. The count API and revised schema above remain unimplemented.

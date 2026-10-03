@@ -1,5 +1,5 @@
 import { Menu } from '@base-ui/react/menu'
-import { Check, ChevronRight, ChevronsUpDown, Monitor, Moon, Sun, UserRound } from 'lucide-react'
+import { Check, ChevronRight, ChevronDown, Monitor, Moon, Sun, UserRound } from 'lucide-react'
 
 export type Theme = 'system' | 'light' | 'dark'
 export function UserMenu({ theme, onThemeChange }: { theme: Theme; onThemeChange: (theme: Theme) => void }) {
@@ -7,9 +7,9 @@ export function UserMenu({ theme, onThemeChange }: { theme: Theme; onThemeChange
     <Menu.Trigger className="user-menu-trigger" aria-label="User menu">
       <span className="user-avatar"><UserRound size={16} /></span>
       <span className="user-menu-name">Local workspace</span>
-      <ChevronsUpDown size={13} className="user-menu-chevron" />
+      <ChevronDown size={13} className="user-menu-chevron" />
     </Menu.Trigger>
-    <Menu.Portal><Menu.Positioner side="top" align="start" sideOffset={8} className="z-50">
+    <Menu.Portal><Menu.Positioner side="bottom" align="start" sideOffset={8} className="z-50">
       <Menu.Popup className="user-menu-popup">
         <div className="user-menu-heading">Local workspace<span>Saved on this device</span></div>
         <Menu.Separator className="user-menu-separator" />

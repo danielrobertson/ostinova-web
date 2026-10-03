@@ -120,7 +120,6 @@ h2 { font-size: 13px; font-weight: 600; margin: 0; }
 .goal-starts { display: flex; flex-wrap: wrap; gap: 8px; }
 .goal-starts button { display: flex; gap: 6px; align-items: center; background: transparent; border: 1px solid var(--border); border-radius: 5px; padding: 8px 9px; font-size: 11px; color: var(--muted-foreground); }
 .goal-starts button:hover { background: var(--muted); color: var(--foreground); }
-.prototype-note { color: var(--faint); font-size: 10px; margin: 44px 0 0; }
 .session-pane { border-left: 1px solid var(--border); background: var(--pane); padding: 30px 25px; display: flex; align-items: flex-start; flex-direction: column; }
 .pane-label { display: flex; align-items: center; gap: 7px; color: var(--muted-foreground); font-size: 11px; }
 .live-dot { width: 6px; height: 6px; background: #82b5a0; border-radius: 50%; }
@@ -171,7 +170,7 @@ h2 { font-size: 13px; font-weight: 600; margin: 0; }
 @media (min-width: 1600px) { .primary-pane { padding-top: 48px; padding-left: 56px; padding-right: 56px; } .workspace-body { grid-template-columns: minmax(0, 1fr) 330px; } }
 @media (max-width: 1180px) {  .workspace-body { grid-template-columns: minmax(0, 1fr) 245px; } .primary-pane { padding: 32px 24px; } .activity-grid { grid-template-columns: 115px minmax(0,1fr); column-gap: 10px; } .day-cells, .day-labels { gap: 3px; } .activity-caption { flex-direction: column; gap: 6px; } .reorder-controls { flex-direction: column; } }
 @media (max-width: 960px) { .workspace-body { display: flex; flex-direction: column; } .session-pane { border-left: 0; border-top: 1px solid var(--border); padding: 24px; } .session-pane .rest-icon { margin-top: 25px; } .session-total { margin-top: 28px; } .session-goal { margin-top: 20px; } .session-explainer { flex-direction: row; flex-wrap: wrap; } .session-explainer > svg { transform: none; } .finish-button { width: auto; } .session-clock { font-size: 35px; } }
-@media (max-width: 620px) {     .primary-pane { padding: 28px 20px; } .activity-grid { grid-template-columns: 105px minmax(0,1fr); } .activity-label { font-size: 10px; } .day-cells, .day-labels { gap: 3px; } .day-cell { border-radius: 2px; min-height: 11px; } .task-row { gap: 8px; } .task-copy { font-size: 12px; } .section-heading > span { max-width: 140px; text-align: right; line-height: 1.5; } .drag-handle { display: none; } .activity-caption { font-size: 9px; } .prototype-note { line-height: 1.6; } }
+@media (max-width: 620px) {     .primary-pane { padding: 28px 20px; } .activity-grid { grid-template-columns: 105px minmax(0,1fr); } .activity-label { font-size: 10px; } .day-cells, .day-labels { gap: 3px; } .day-cell { border-radius: 2px; min-height: 11px; } .task-row { gap: 8px; } .task-copy { font-size: 12px; } .section-heading > span { max-width: 140px; text-align: right; line-height: 1.5; } .drag-handle { display: none; } .activity-caption { font-size: 9px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
 @media (max-width: 620px) {
 
@@ -300,14 +299,99 @@ h2 { font-size: 13px; font-weight: 600; margin: 0; }
 .workspace-toolbar { display: flex; align-items: center; height: 56px; padding: 8px 20px; border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent); }
 .workspace-header-actions { margin-left: auto; display: flex; align-items: center; }
 .ostinova-sidebar[data-state=collapsed] .user-menu-name, .ostinova-sidebar[data-state=collapsed] .user-menu-chevron { display: none; }
-.ostinova-sidebar .user-menu-trigger { min-height: 44px; padding: 4px; border-radius: 12px; }
-.ostinova-sidebar .user-avatar { width: 36px; height: 36px; }
-.ostinova-sidebar .user-menu-name { white-space: nowrap; }
+.ostinova-sidebar .user-menu-trigger { min-width: 0; min-height: 36px; padding: 4px 8px; border-radius: 6px; }
+.ostinova-sidebar .user-avatar { width: 24px; height: 24px; }
+.ostinova-sidebar .user-menu-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 [data-slot=sidebar-menu-item] { z-index: 1; }
 @media (max-width: 767px) { .workspace-toolbar { padding-inline: 12px; } }
 
 .workspace-header-divider { width: 1px; height: 20px; flex-shrink: 0; margin: 0 12px; background: var(--border); }
+.workspace-breadcrumb { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.workspace-breadcrumb > button { flex-shrink: 0; border: 0; border-radius: 4px; background: transparent; color: var(--muted-foreground); font-size: 14px; padding: 5px 3px; }
+.workspace-breadcrumb > button:hover { color: var(--foreground); background: var(--muted); }
+.workspace-breadcrumb > button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .workspace-page-title { min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 550; line-height: 1.5; }
 
 .habit-row .task-checkbox { position: relative; }
 .habit-row .task-checkbox::before { content: ""; position: absolute; inset: -7px; }
+
+/* The schedule reads as optional text; its controls live in the popover. */
+.habit-composer-options { flex-shrink: 0; gap: 3px; }
+.habit-schedule-trigger { display: inline-flex; align-items: center; justify-content: space-between; gap: 5px; max-width: 170px; min-height: 32px; padding: 0 7px; border: 0; border-radius: 4px; background: transparent; color: var(--muted-foreground); font-size: 12px; white-space: nowrap; }
+.habit-schedule-trigger span { overflow: hidden; text-overflow: ellipsis; }
+.habit-schedule-trigger svg { flex-shrink: 0; }
+.habit-schedule-trigger:hover, .habit-schedule-trigger[data-popup-open] { background: var(--muted); color: var(--foreground); }
+.habit-schedule-trigger:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.habit-schedule-trigger:disabled { opacity: .5; }
+.schedule-detail { display: grid; gap: 10px; margin: 0 3px; padding: 8px 6px 6px; }
+.schedule-detail label { font-size: 12px; }
+.schedule-detail p { color: var(--muted-foreground); font-size: 11px; line-height: 1.5; }
+.schedule-number { display: flex; align-items: center; border-radius: 5px; background: var(--muted); }
+.schedule-number button { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 5px; background: transparent; }
+.schedule-number button:hover { background: var(--accent); }
+.schedule-number button:disabled { opacity: .35; }
+.schedule-number input { width: 100%; min-width: 0; height: 36px; padding: 0; border: 0; background: transparent; text-align: center; font-size: 13px; font-variant-numeric: tabular-nums; }
+.schedule-weekdays { display: flex; gap: 2px; }
+.schedule-weekdays button { flex: 1; height: 32px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: var(--muted-foreground); font-size: 10px; }
+.schedule-weekdays button[data-pressed] { background: var(--accent); color: var(--foreground); }
+.schedule-done { display: flex; margin: 5px 0 0 auto; height: 32px; font-size: 12px; }
+.habit-name-edit { border: 0; background: transparent; text-align: left; }
+.habit-count-add { width: 24px; height: 28px; padding: 0; color: var(--muted-foreground); }
+.habit-count-add.is-complete { opacity: 1; color: var(--primary); }
+.habit-count-progress { display: flex; align-items: center; justify-content: flex-end; gap: 5px; font-variant-numeric: tabular-nums; }
+.habit-count-progress button { width: 28px; height: 28px; padding: 0; color: var(--muted-foreground); }
+@media (max-width: 620px) {
+  .habit-schedule-trigger { max-width: 118px; padding-inline: 4px; font-size: 11px; }
+  .habit-composer { gap: 4px; padding-inline: 6px; }
+  .habit-count-add { grid-row: 1 / 3; }
+  .habit-count-progress { justify-content: flex-start; }
+}
+
+.todo-composer:focus-within { border-color: var(--ring); }
+.todo-add { flex-shrink: 0; color: var(--muted-foreground); }
+.todo-list { list-style: none; margin: 0; padding: 0; }
+.todo-row { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 0 8px; border-radius: 6px; transition: background-color 150ms ease-out; }
+.todo-row:hover, .todo-row:focus-within { background: color-mix(in srgb, var(--foreground) 4%, var(--background)); }
+.todo-text { min-width: 0; padding-block: 9px; overflow-wrap: anywhere; line-height: 1.6; transition: color 160ms ease-out; }
+.todo-item.is-completed .todo-text { color: var(--muted-foreground); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--muted-foreground) 45%, transparent); }
+.todo-checkbox { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; flex-shrink: 0; border: 1px solid var(--input); border-radius: 4px; background: transparent; cursor: pointer; transition: background-color 150ms ease-out, border-color 150ms ease-out; }
+.todo-checkbox::before { content: ''; position: absolute; inset: -12px; }
+.todo-checkbox[data-checked] { background: var(--muted); border-color: var(--muted-foreground); color: var(--muted-foreground); }
+.todo-checkbox:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; }
+.todo-checkbox[data-disabled] { cursor: default; opacity: .4; }
+.todo-check-indicator { display: flex; }
+.todo-completed-heading { display: flex; gap: 8px; margin-top: 24px; padding: 12px 8px 8px; border-top: 1px solid var(--border); color: var(--muted-foreground); font-size: 11px; }
+.todo-completed-heading span { font-variant-numeric: tabular-nums; }
+/* Keep the checkbox space reserved so revealing it never shifts the text.
+   Opacity preserves keyboard access; touch devices retain visible controls. */
+@media (hover: hover) and (pointer: fine) and (min-width: 768px) {
+  .todo-row .todo-checkbox { opacity: 0; transition: opacity 120ms ease-out, background-color 150ms ease-out, border-color 150ms ease-out; }
+  .todo-row:hover .todo-checkbox, .todo-row:focus-within .todo-checkbox { opacity: 1; }
+  .todo-row:hover .todo-checkbox[data-disabled], .todo-row:focus-within .todo-checkbox[data-disabled] { opacity: .4; }
+}
+@media (max-width: 767px) { .todo-row { min-height: 48px; } }
+@media (prefers-reduced-motion: reduce) { .todo-row, .todo-text, .todo-checkbox { transition: none; } }
+
+/* A quiet inset workspace, shared by every destination. */
+.group\/sidebar-wrapper { background: var(--sidebar); }
+.main { background: var(--background); }
+.workspace-page-body { display: flex; flex-direction: column; min-height: calc(100dvh - 56px); }
+.workspace-toolbar { height: 48px; padding-block: 4px; }
+.workspace-header-actions { gap: 4px; color: var(--muted-foreground); }
+.workspace-page-title { font-size: 13px; font-weight: 550; }
+.primary-pane { max-width: none; padding: 24px; }
+.goal-row, .habit-row, .todo-row { border-radius: 6px; }
+.task-row { border-bottom: 0; border-radius: 6px; padding-inline: 8px; }
+@media (min-width: 768px) {
+  .main { margin: 8px 8px 8px 0; border: 1px solid color-mix(in srgb, var(--border) 70%, transparent); border-radius: 12px; overflow: clip; }
+  .workspace-page-body { min-height: calc(100dvh - 66px); }
+}
+@media (max-width: 767px) {
+  .workspace-page-body { min-height: calc(100dvh - 48px); }
+  .primary-pane { padding: 20px 16px; }
+}
+
+/* The inset pane owns the desktop boundary, including its rounded corner. */
+@media (min-width: 768px) {
+  .ostinova-sidebar-panel { border-right-width: 0; border-left-width: 0; }
+}

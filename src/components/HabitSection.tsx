@@ -1,18 +1,15 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Dispatch, SetStateAction } from 'react'
-import { Archive, Check, ChevronRight, Plus } from 'lucide-react'
+import { Archive, Check, ChevronRight, Minus, Plus } from 'lucide-react'
 import { Button } from './ui/button'
 import { Select } from './ui/select'
 import { HabitDatePicker } from './ui/habit-date-picker'
+import { HabitSchedulePicker, scheduleLabel } from './ui/habit-schedule-picker'
 import { HabitComposer } from './HabitComposer'
-import { dateKey, isDue, toggleHabit, weeklyCount } from '../lib/workspace'
+import { changeHabitCount, completionCount, dateKey, isCountHabit, isDue, toggleHabit, weeklyCount } from '../lib/workspace'
 import type { Habit, Workspace } from '../lib/workspace'
 
-const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-function scheduleLabel(h: Habit) {
-  return h.schedule === 'daily' ? 'Daily' : h.schedule === 'weekly' ? `${h.target} ${h.target === 1 ? 'time' : 'times'} per week` : h.weekdays.map(d => weekdays[d]).join(', ')
-}
 export function HabitSection({ workspace, setWorkspace, goalId, now, ready, onCheck }: {
   workspace: Workspace; setWorkspace: Dispatch<SetStateAction<Workspace>>; goalId?: string; now: number; ready: boolean; onCheck: () => void
 }) {
@@ -30,8 +27,8 @@ export function HabitSection({ workspace, setWorkspace, goalId, now, ready, onCh
   const today = dateKey(date)
   const isToday = today === dateKey(actualToday)
   const dateLabel = isToday ? 'today' : date.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })
-  const headerActions = !goalId && typeof document !== 'undefined' ? document.getElementById('workspace-header-actions') : null
-  const habits = workspace.habits.filter(h => !h.archivedAt && (goalId ? h.goalId === goalId : (now && (isDue(h, date) || h.checkIns.includes(today)))))
+  const headerActions = ready && !goalId && typeof document !== 'undefined' ? document.getElementById('workspace-header-actions') : null
+  const habits = workspace.habits.filter(h => !h.archivedAt && (goalId ? h.goalId === goalId : (now && (isDue(h, date) || h.checkIns.includes(today) || h.schedule === 'total'))))
   function edit(h?: Habit) {
     setEditing(h?.id ?? null); setName(h?.name ?? ''); setAssignedGoal(h ? h.goalId ?? '' : goalId ?? '')
     setSchedule(h?.schedule ?? 'daily'); setDays(h?.weekdays ?? [1, 2, 3, 4, 5]); setTarget(h?.target ?? 3); setOpen(true)
@@ -58,9 +55,7 @@ export function HabitSection({ workspace, setWorkspace, goalId, now, ready, onCh
       <h3>{editing ? 'Edit habit' : 'New habit'}</h3>
       <label>Habit name<input autoFocus required maxLength={100} value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Practice piano for 15 minutes" /></label>
       <div className="habit-form-columns"><div className="habit-field"><label htmlFor="habit-goal">Goal <span className="field-optional">optional</span></label><Select id="habit-goal" value={assignedGoal} onValueChange={setAssignedGoal} options={[{ value: '', label: 'Without a goal' }, ...workspace.goals.filter(g => !g.archivedAt).map(g => ({ value: g.id, label: g.name }))]} /></div>
-      <div className="habit-field"><label htmlFor="habit-repeat">Repeat</label><Select id="habit-repeat" value={schedule} onValueChange={value => setSchedule(value as Habit['schedule'])} options={[{ value: 'daily', label: 'Daily' }, { value: 'days', label: 'Selected weekdays' }, { value: 'weekly', label: 'Times per week' }]} /></div></div>
-      {schedule === 'days' && <fieldset><legend>Repeat on</legend><div className="weekday-options">{weekdays.map((day, i) => <button key={day} type="button" aria-pressed={days.includes(i)} onClick={() => setDays(previous => previous.includes(i) ? previous.filter(d => d !== i) : [...previous, i])}>{day}</button>)}</div>{!days.length && <p role="status">Choose at least one day.</p>}</fieldset>}
-      {schedule === 'weekly' && <div className="habit-field"><label htmlFor="habit-target">Days each week</label><Select id="habit-target" value={String(target)} onValueChange={value => setTarget(Number(value))} options={[1, 2, 3, 4, 5, 6, 7].map(n => ({ value: String(n), label: String(n) }))} /><small>Check in once per day. The week starts on Monday.</small></div>}
+      <div className="habit-field"><label>Repeat</label><HabitSchedulePicker value={{ schedule, target, weekdays: days }} onChange={value => { setSchedule(value.schedule); setTarget(value.target); setDays(value.weekdays) }} /></div></div>
       <div className="dialog-actions"><Button variant="ghost" type="button" onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" disabled={!ready || !name.trim() || schedule === 'days' && !days.length}>{editing ? 'Save habit' : 'Create habit'}</Button></div>
     </form>}
     {(goalId ? workspace.goals.filter(g => g.id === goalId) : [...workspace.goals, { id: null, name: 'Without a goal', color: undefined }]).map(group => {
@@ -81,11 +76,12 @@ export function HabitSection({ workspace, setWorkspace, goalId, now, ready, onCh
         </button></h3>
         <div id={panelId} hidden={!expanded}>
           {grouped.map(h => {
-            const checked = h.checkIns.includes(today), due = !!now && isDue(h, date)
+            const counted = isCountHabit(h), count = completionCount(h, date)
+            const checked = counted ? count >= h.target : h.checkIns.includes(today), due = !!now && isDue(h, date)
             return <div className={`habit-row ${checked ? 'is-checked' : ''}`} key={h.id}>
-              <button className={`task-checkbox ${checked ? 'checked' : ''}`} aria-label={`${checked ? 'Undo' : 'Complete'} ${h.name} ${dateLabel}`} aria-pressed={checked} disabled={!ready || !now || !checked && !due} onClick={() => { setWorkspace(w => toggleHabit(w, h.id, date)); if (!checked) onCheck() }}>{checked && <Check size={12} />}</button>
-              <span className="habit-name">{h.name}</span>
-              <span className="habit-schedule">{h.schedule === 'weekly' ? `${weeklyCount(h, date)}/${h.target} ${h.target === 1 ? 'time' : 'times'} ${isToday ? 'this' : 'that'} week` : scheduleLabel(h)}{!due && !checked ? ` · Not scheduled ${dateLabel}` : ''}</span>
+              {counted ? <Button variant="ghost" className={`habit-count-add ${checked ? 'is-complete' : ''}`} aria-label={`Add completion to ${h.name} ${dateLabel}`} disabled={!ready || !now || checked} onClick={() => { setWorkspace(w => changeHabitCount(w, h.id, date, 1)); onCheck() }}>{checked ? <Check size={13} /> : <Plus size={14} />}</Button> : <button className={`task-checkbox ${checked ? 'checked' : ''}`} aria-label={`${checked ? 'Undo' : 'Complete'} ${h.name} ${dateLabel}`} aria-pressed={checked} disabled={!ready || !now || !checked && !due} onClick={() => { setWorkspace(w => toggleHabit(w, h.id, date)); if (!checked) onCheck() }}>{checked && <Check size={12} />}</button>}
+              <button className="habit-name habit-name-edit" aria-label={`Edit ${h.name}`} disabled={!ready} onClick={() => edit(h)}>{h.name}</button>
+              <span className="habit-schedule">{counted ? <span className="habit-count-progress"><Button variant="ghost" aria-label={`Undo one completion of ${h.name} ${dateLabel}`} title={`Undo one completion ${dateLabel}`} disabled={!ready || !now || !h.checkIns.includes(today)} onClick={() => setWorkspace(w => changeHabitCount(w, h.id, date, -1))}><Minus size={12} /></Button><span aria-live="polite">{count}/{h.target} {h.schedule === 'daily-count' ? dateLabel : h.schedule === 'weekly-count' ? `${isToday ? 'this' : 'that'} week` : checked ? 'completed' : 'completions'}</span></span> : h.schedule === 'weekly' ? `${weeklyCount(h, date)}/${h.target} days ${isToday ? 'this' : 'that'} week` : scheduleLabel(h)}{!counted && !due && !checked ? ` · Not scheduled ${dateLabel}` : ''}</span>
               <button className="icon-button habit-edit row-action" aria-label={`Archive ${h.name}`} title="Archive habit" disabled={!ready} onClick={() => setWorkspace(w => ({ ...w, habits: w.habits.map(item => item.id === h.id ? { ...item, archivedAt: new Date().toISOString() } : item) }))}><Archive size={14} /></button>
             </div>
           })}
