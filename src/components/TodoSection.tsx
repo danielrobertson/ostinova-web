@@ -14,7 +14,6 @@ export function TodoSection({ workspace, setWorkspace, ready, onCheck }: { works
   const [announcement, setAnnouncement] = useState('')
   const reducedMotion = useReducedMotion()
   const todos = sortedTodos(workspace)
-  const completedCount = todos.filter(t => t.completedAt).length
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
@@ -24,7 +23,7 @@ export function TodoSection({ workspace, setWorkspace, ready, onCheck }: { works
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [ready])
-  return <section aria-label="Todo">
+  return <section aria-label="Todos">
     <form className="habit-composer todo-composer" onSubmit={event => {
       event.preventDefault()
       if (!ready || !text.trim()) return
@@ -49,8 +48,7 @@ export function TodoSection({ workspace, setWorkspace, ready, onCheck }: { works
       controls[next]?.focus()
     }} className="todo-list" aria-label="Todo items" layout={!reducedMotion}>
       <AnimatePresence initial={false}>
-        {todos.map((todo, index) => <motion.li key={todo.id} layout={!reducedMotion} initial={reducedMotion ? false : { opacity: 0, y: -8, scale: .985 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', duration: .28, bounce: 0 }} className={`todo-item ${todo.completedAt ? 'is-completed' : ''}`}>
-          {!!todo.completedAt && (index === 0 || !todos[index - 1].completedAt) && <div className="todo-completed-heading">Completed <span>{completedCount}</span></div>}
+        {todos.map(todo => <motion.li key={todo.id} layout={!reducedMotion} initial={reducedMotion ? false : { opacity: 0, y: -8, scale: .985 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', duration: .28, bounce: 0 }} className={`todo-item ${todo.completedAt ? 'is-completed' : ''}`}>
           <div className="todo-row">
             <Checkbox checked={!!todo.completedAt} disabled={!ready} aria-label={`${todo.completedAt ? 'Reopen' : 'Complete'} ${todo.text}`} onCheckedChange={() => {
               setWorkspace(w => toggleTodo(w, todo.id, new Date().toISOString()))

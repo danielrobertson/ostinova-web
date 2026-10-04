@@ -7,8 +7,8 @@ export const Route = createRootRoute({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'Ostinova | Goals and habits' },
-      { name: 'description', content: 'Create goals, build repeating habits, and keep track of your progress.' },
+      { title: 'Ostinova | Todos and habits' },
+      { name: 'description', content: 'Keep track of your todos and build repeating habits.' },
     ],
     links: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
   }),
